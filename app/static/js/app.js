@@ -384,20 +384,69 @@ function copyConsultationReport(cardId) {
     copyToClipboard(text, '📋 Skopiowano kompletną ekspertyzę doradczą!');
 }
 
+function formatSapMarkdown(rawText) {
+    if (!rawText) return '';
+    const lines = String(rawText).split('\n');
+    let html = '';
+    let inList = false;
+
+    const formatInline = (str) => {
+        return str
+            .replace(/\*\*(.+?)\*\*/g, '<strong class="font-bold text-slate-900 dark:text-white">$1</strong>')
+            .replace(/`([A-Z0-9_/]{2,15})`/g, `<button type="button" onclick="copyTCode('$1')" class="ios-tcode-pill" style="padding:1px 6px; font-size:10.5px;">$1</button>`)
+            .replace(/`([^`]+)`/g, '<code class="font-mono text-[11px] bg-slate-200/70 dark:bg-zinc-800 px-1.5 py-0.5 rounded">$1</code>');
+    };
+
+    for (let rawLine of lines) {
+        const line = rawLine.trim();
+        if (!line) {
+            if (inList) {
+                html += '</ul>';
+                inList = false;
+            }
+            continue;
+        }
+        if (line.startsWith('### ')) {
+            if (inList) { html += '</ul>'; inList = false; }
+            html += `<h4 class="text-sm font-bold text-slate-900 dark:text-white mt-2 mb-1">${formatInline(line.slice(4))}</h4>`;
+        } else if (line.startsWith('## ')) {
+            if (inList) { html += '</ul>'; inList = false; }
+            html += `<h3 class="text-sm font-extrabold text-blue-700 dark:text-blue-400 mt-2 mb-1">${formatInline(line.slice(3))}</h3>`;
+        } else if (line.startsWith('- ') || line.startsWith('* ')) {
+            if (!inList) {
+                html += '<ul class="list-disc list-inside space-y-1 my-1.5 pl-1">';
+                inList = true;
+            }
+            html += `<li class="leading-relaxed">${formatInline(line.slice(2))}</li>`;
+        } else if (/^\d+\.\s+/.test(line)) {
+            if (!inList) {
+                html += '<ul class="list-decimal list-inside space-y-1 my-1.5 pl-1">';
+                inList = true;
+            }
+            html += `<li class="leading-relaxed">${formatInline(line.replace(/^\d+\.\s+/, ''))}</li>`;
+        } else {
+            if (inList) { html += '</ul>'; inList = false; }
+            html += `<p class="leading-relaxed my-1">${formatInline(line)}</p>`;
+        }
+    }
+    if (inList) html += '</ul>';
+    return html;
+}
+
 function renderChatResponse(data, originalQuery) {
     const encodedPrompt = encodeURIComponent(originalQuery || '');
 
     if (data.type === 'diagnosis' && data.diagnosis) {
         return renderExpertConsultationCard(data.diagnosis, originalQuery);
     } else if (data.type === 'guide') {
-        const formatted = (data.content || '').replace(/\n/g, '<br>');
+        const formatted = formatSapMarkdown(data.content || '');
         const encodedContent = encodeURIComponent(data.content || '');
         return `
             <div class="space-y-2.5">
-                <div class="text-xs text-slate-800 dark:text-slate-200 leading-relaxed font-sans">
+                <div class="text-xs text-slate-800 dark:text-slate-200 leading-relaxed font-sans space-y-1">
                     ${formatted}
                 </div>
-                <div class="flex justify-end pt-1">
+                <div class="flex justify-end pt-1 border-t border-slate-200/50 dark:border-white/10">
                     <button onclick="promptCorrection('${encodedPrompt}', '${encodedContent}')" 
                             class="text-[11px] text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 font-medium">
                         ✍️ Naucz reguły / Skoryguj do Smart Memory (${currentCompanyId})

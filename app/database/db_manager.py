@@ -783,10 +783,19 @@ def get_sd_tcodes(query: str = None, category: str = None, company_id: str = Non
         "company_id": r[7]
     } for r in rows]
 
-def get_sd_tcode_categories() -> list:
+def get_sd_tcode_categories(company_id: str = None) -> list:
     con = get_db_connection()
-    rows = con.execute("SELECT DISTINCT category FROM sd_tcodes_catalog ORDER BY category").fetchall()
-    return [r[0] for r in rows]
+    if not company_id:
+        company_id = get_active_company_id()
+    rows = con.execute("""
+        SELECT category, COUNT(*) as cnt
+        FROM sd_tcodes_catalog
+        WHERE (company_id IS NULL OR company_id = ?)
+        GROUP BY category
+        ORDER BY category
+    """, [company_id]).fetchall()
+    return [{"category": r[0], "count": r[1]} for r in rows]
+
 
 def add_custom_sd_tcode(tcode: str, name: str, category: str, description: str, tables_involved: str = "", spro_path: str = "", company_id: str = None) -> bool:
     con = get_db_connection()

@@ -31,6 +31,12 @@ api_bp = Blueprint('api', __name__)
 def home():
     return render_template('index.html')
 
+@api_bp.route('/landing')
+@api_bp.route('/strona')
+def landing_page():
+    """Dedykowana strona produktowa / wizytówka aplikacji SAP SD Enterprise Copilot."""
+    return render_template('landing.html')
+
 # --- MULTI-COMPANY WORKSPACE API ---
 
 @api_bp.route('/api/companies', methods=['GET'])
@@ -526,14 +532,16 @@ def get_tcodes():
     return jsonify({
         "status": "success",
         "count": len(tcodes),
+        "total": len(tcodes),
         "company_id": company_id,
         "tcodes": tcodes
     })
 
 @api_bp.route('/api/tcodes/categories', methods=['GET'])
 def get_tcodes_categories():
-    """Zwraca dostępne kategorie transakcji."""
-    cats = get_sd_tcode_categories()
+    """Zwraca dostępne kategorie transakcji wraz z liczbą kodów."""
+    company_id = request.args.get('company_id') or get_active_company_id()
+    cats = get_sd_tcode_categories(company_id=company_id)
     return jsonify({"status": "success", "categories": cats})
 
 @api_bp.route('/api/tcodes/custom', methods=['POST'])

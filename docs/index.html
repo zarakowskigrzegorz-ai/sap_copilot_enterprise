@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SAP SD Enterprise Copilot — Inteligentny Asystent Architekta Order-to-Cash (S/4HANA)</title>
+    <meta name="description" content="Platforma ekspercka dla konsultantów i architektów SAP SD (Sales & Distribution). Diagnostyka błędów O2C, symulator wyceny V/08, VKOA Troubleshooter, MDG Auto-Fix i katalog 200+ transakcji.">
+    <style>
+        :root {
+            --bg-primary: #060913;
+            --bg-secondary: #0d1326;
+            --bg-card: rgba(18, 26, 48, 0.72);
+            --bg-glass: rgba(15, 23, 42, 0.75);
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --border-subtle: rgba(148, 163, 184, 0.16);
+            --accent-blue: #3b82f6;
+            --accent-cyan: #06b6d4;
+            --accent-indigo: #6366f1;
+            --accent-emerald: #10b981;
+            --accent-amber: #f59e0b;
+            --accent-rose: #f43f5e;
+            --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Inter", "Segoe UI", Roboto, sans-serif;
+            --font-mono: "SF Mono", "JetBrains Mono", Menlo, Monaco, Consolas, monospace;
+        }
+
+        body.light-theme {
+            --bg-primary: #f5f7fb;
+            --bg-secondary: #ffffff;
+            --bg-card: rgba(255, 255, 255, 0.88);
+            --bg-glass: rgba(255, 255, 255, 0.85);
+            --text-main: #0f172a;
+            --text-muted: #475569;
+            --border-subtle: rgba(15, 23, 42, 0.1);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: var(--font-sans);
+            background-color: var(--bg-primary);
+            color: var(--text-main);
+            line-height: 1.6;
+            overflow-x: hidden;
+            background-image:
+                radial-gradient(circle at 15% 10%, rgba(59, 130, 246, 0.16), transparent 35%),
+                radial-gradient(circle at 85% 15%, rgba(99, 102, 241, 0.14), transparent 35%),
+                radial-gradient(circle at 50% 80%, rgba(6, 182, 212, 0.1), transparent 40%);
+        }
+
+        .site-nav {
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            background: var(--bg-glass);
+            border-bottom: 1px solid var(--border-subtle);
+            padding: 14px 28px;
+        }
+
+        .nav-inner {
+            max-width: 1240px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+
+        .brand-logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+            color: var(--text-main);
+        }
+
+        .brand-badge-icon {
+            width: 38px;
+            height: 38px;
+            border-radius: 11px;
+            background: linear-gradient(135deg, #2563eb, #06b6d4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 19px;
+            box-shadow: 0 6px 18px rgba(37, 99, 235, 0.35);
+        }
+
+        .brand-title {
+            font-weight: 800;
+            font-size: 16px;
+            letter-spacing: -0.02em;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .s4-pill {
+            font-size: 10px;
+            font-weight: 700;
+            padding: 2px 7px;
+            border-radius: 999px;
+            background: rgba(59, 130, 246, 0.18);
+            color: #60a5fa;
+            border: 1px solid rgba(59, 130, 246, 0.35);
+        }
+
+        .nav-links {
+            display: flex;
+            align-items: center;
+            gap: 22px;
+            flex-wrap: wrap;
+        }
+
+        .nav-links a {
+            color: var(--text-muted);
+            text-decoration: none;
+            font-size: 13.5px;
+            font-weight: 600;
+            transition: color 0.18s ease;
+        }
+
+        .nav-links a:hover {
+            color: var(--text-main);
+        }
+
+        .nav-actions {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn-primary {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 9px 18px;
+            border-radius: 999px;
+            background: linear-gradient(135deg, #2563eb, #4f46e5);
+            color: #ffffff;
+            font-weight: 700;
+            font-size: 13px;
+            text-decoration: none;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 8px 24px rgba(37, 99, 235, 0.35);
+            transition: transform 0.18s ease, box-shadow 0.18s ease;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 12px 28px rgba(37, 99, 235, 0.5);
+        }
+
+        .btn-secondary {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 9px 16px;
+            border-radius: 999px;
+            background: rgba(148, 163, 184, 0.12);
+            color: var(--text-main);
+            border: 1px solid var(--border-subtle);
+            font-weight: 600;
+            font-size: 13px;
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.18s ease;
+        }
+
+        .btn-secondary:hover {
+            background: rgba(148, 163, 184, 0.22);
+        }
+
+        .hero-section {
+            max-width: 1240px;
+            margin: 0 auto;
+            padding: 68px 24px 52px;
+            text-align: center;
+        }
+
+        .hero-eyebrow {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 14px;
+            border-radius: 999px;
+            background: rgba(59, 130, 246, 0.12);
+            border: 1px solid rgba(59, 130, 246, 0.3);
+            color: #60a5fa;
+            font-size: 12px;
+            font-weight: 700;
+            margin-bottom: 20px;
+        }
+
+        .hero-title {
+            font-size: clamp(32px, 5vw, 56px);
+            font-weight: 900;
+            letter-spacing: -0.03em;
+            line-height: 1.1;
+            max-width: 920px;
+            margin: 0 auto 20px;
+        }
+
+        .gradient-text {
+            background: linear-gradient(135deg, #60a5fa 0%, #38bdf8 45%, #a78bfa 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero-subtitle {
+            font-size: clamp(15px, 2vw, 18.5px);
+            color: var(--text-muted);
+            max-width: 760px;
+            margin: 0 auto 32px;
+        }
+
+        .hero-cta-group {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 14px;
+            flex-wrap: wrap;
+            margin-bottom: 48px;
+        }
+
+        .kpi-strip {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            max-width: 1080px;
+            margin: 0 auto;
+        }
+
+        .kpi-box {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 18px;
+            padding: 20px 16px;
+            backdrop-filter: blur(12px);
+        }
+
+        .kpi-num {
+            font-size: 28px;
+            font-weight: 900;
+            font-family: var(--font-mono);
+            color: #60a5fa;
+        }
+
+        .kpi-label {
+            font-size: 12.5px;
+            color: var(--text-muted);
+            margin-top: 4px;
+            font-weight: 600;
+        }
+
+        .section-container {
+            max-width: 1240px;
+            margin: 0 auto;
+            padding: 56px 24px;
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .section-title {
+            font-size: clamp(24px, 3.5vw, 36px);
+            font-weight: 800;
+            letter-spacing: -0.02em;
+            margin-bottom: 10px;
+        }
+
+        .section-desc {
+            color: var(--text-muted);
+            font-size: 15px;
+            max-width: 680px;
+            margin: 0 auto;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+
+        .feature-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 20px;
+            padding: 24px;
+            transition: transform 0.2s ease, border-color 0.2s ease;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(59, 130, 246, 0.45);
+        }
+
+        .feature-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            background: rgba(59, 130, 246, 0.14);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+        }
+
+        .feature-title {
+            font-size: 17px;
+            font-weight: 800;
+        }
+
+        .feature-text {
+            font-size: 13.5px;
+            color: var(--text-muted);
+            flex: 1;
+        }
+
+        .code-pills {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            padding-top: 8px;
+            border-top: 1px solid var(--border-subtle);
+        }
+
+        .code-pill {
+            font-family: var(--font-mono);
+            font-size: 11px;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 6px;
+            background: rgba(59, 130, 246, 0.12);
+            color: #60a5fa;
+        }
+
+        .demo-showcase {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: 24px;
+            padding: 28px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+        }
+
+        .demo-controls {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .demo-field {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .demo-field label {
+            font-size: 11px;
+            font-weight: 700;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+
+        .demo-input {
+            padding: 9px 12px;
+            border-radius: 10px;
+            border: 1px solid var(--border-subtle);
+            background: var(--bg-secondary);
+            color: var(--text-main);
+            font-family: var(--font-mono);
+            font-size: 13px;
+        }
+
+        .demo-table-wrap {
+            overflow-x: auto;
+            border: 1px solid var(--border-subtle);
+            border-radius: 14px;
+        }
+
+        .demo-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12.5px;
+            text-align: left;
+        }
+
+        .demo-table th {
+            background: rgba(59, 130, 246, 0.1);
+            padding: 10px 12px;
+            font-size: 11px;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            border-bottom: 1px solid var(--border-subtle);
+        }
+
+        .demo-table td {
+            padding: 10px 12px;
+            border-bottom: 1px solid var(--border-subtle);
+            font-family: var(--font-mono);
+        }
+
+        .demo-table tr.highlight-row {
+            background: rgba(16, 185, 129, 0.08);
+            font-weight: 700;
+        }
+
+        .site-footer {
+            border-top: 1px solid var(--border-subtle);
+            padding: 36px 24px;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 13px;
+        }
+
+        @media (max-width: 1024px) {
+            .features-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .kpi-strip,
+            .demo-controls {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 640px) {
+            .site-nav {
+                padding: 12px 16px;
+            }
+            .nav-links {
+                display: none;
+            }
+            .features-grid,
+            .kpi-strip,
+            .demo-controls {
+                grid-template-columns: 1fr;
+            }
+            .hero-section {
+                padding: 40px 16px 32px;
+            }
+            .demo-showcase {
+                padding: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="site-nav">
+        <div class="nav-inner">
+            <a href="http://127.0.0.1:5001/" class="brand-logo">
+                <div class="brand-badge-icon">⚡</div>
+                <div>
+                    <div class="brand-title">
+                        SAP SD Copilot
+                        <span class="s4-pill">S/4HANA 2026</span>
+                    </div>
+                </div>
+            </a>
+
+            <div class="nav-links">
+                <a href="#funkcje">Moduły eksperckie</a>
+                <a href="#symulator">Symulator V/08 Live</a>
+                <a href="#architektura">Architektura & Tabele SAP</a>
+            </div>
+
+            <div class="nav-actions">
+                <button type="button" onclick="toggleSiteTheme()" class="btn-secondary" title="Przełącz motyw">
+                    ☀️ / 🌙
+                </button>
+                <a href="https://github.com/zarakowskigrzegorz-ai/sap_copilot_enterprise" target="_blank" rel="noopener" class="btn-secondary">
+                    📦 GitHub
+                </a>
+                <a href="http://127.0.0.1:5001/" class="btn-primary">
+                    🚀 Uruchom Aplikację
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <section class="hero-section">
+        <div class="hero-eyebrow">
+            <span>🛡️</span> Stworzony dla Konsultantów i Architektów SAP Sales & Distribution
+        </div>
+        <h1 class="hero-title">
+            Twój inteligentny asystent <span class="gradient-text">Order-to-Cash</span> w środowisku SAP S/4HANA
+        </h1>
+        <p class="hero-subtitle">
+            Natychmiastowa diagnostyka błędów fakturowania i logistyki (<code>VF067</code>, <code>V1382</code>, <code>VL150</code>, <code>FF704</code>), interaktywny symulator arkusza kalkulacyjnego <code>V/08 (RVAA01)</code>, walidator <code>VKOA</code> oraz katalog 200+ transakcji SD z pamięcią kontekstową dla każdego klienta.
+        </p>
+
+        <div class="hero-cta-group">
+            <a href="http://127.0.0.1:5001/" class="btn-primary" style="padding: 13px 26px; font-size: 15px;">
+                ⚡ Otwórz Kokpit Konsultanta (PIN: 1234)
+            </a>
+            <a href="https://github.com/zarakowskigrzegorz-ai/sap_copilot_enterprise" target="_blank" rel="noopener" class="btn-secondary" style="padding: 13px 22px; font-size: 14px;">
+                ⭐ Zobacz repozytorium na GitHub
+            </a>
+        </div>
+
+        <div class="kpi-strip">
+            <div class="kpi-box">
+                <div class="kpi-num">3 500+</div>
+                <div class="kpi-label">Zleceń sprzedaży VBAK/VBAP w próbce korporacyjnej</div>
+            </div>
+            <div class="kpi-box">
+                <div class="kpi-num">200+</div>
+                <div class="kpi-label">Transakcji SAP SD i ścieżek SPRO (Spotlight ⌘K)</div>
+            </div>
+            <div class="kpi-box">
+                <div class="kpi-num">RVAA01</div>
+                <div class="kpi-label">Pełny symulator kaskady wyceny V/08 i marży VPRS</div>
+            </div>
+            <div class="kpi-box">
+                <div class="kpi-num">1-Click</div>
+                <div class="kpi-label">Auto-Fix luk Master Data (MDG) i kont VKOA</div>
+            </div>
+        </div>
+    </section>
+
+    <section id="funkcje" class="section-container">
+        <div class="section-header">
+            <h2 class="section-title">Kompleksowe wsparcie wdrożeń i utrzymania SAP SD</h2>
+            <p class="section-desc">Każdy moduł odwzorowuje rzeczywiste tabele słownikowe i transakcyjne systemu SAP ERP / S/4HANA.</p>
+        </div>
+
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon">💬</div>
+                <h3 class="feature-title">1. Ekspercki Czat AI & Diagnostyka Błędów</h3>
+                <p class="feature-text">
+                    Rozpoznaje komunikaty błędów SAP SD/FI/MM i generuje wielowariantowe karty ekspertyz (Szybkie Obejście, Konfiguracja Docelowa SPRO, Prewencja User-Exit/BAdI) z gotowym wsadem LSMW.
+                </p>
+                <div class="code-pills">
+                    <span class="code-pill">VF067</span>
+                    <span class="code-pill">V1382</span>
+                    <span class="code-pill">VL150</span>
+                    <span class="code-pill">M7021</span>
+                    <span class="code-pill">FF704</span>
+                </div>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">🩺</div>
+                <h3 class="feature-title">2. VKOA Account Determination & Auto-Fix</h3>
+                <p class="feature-text">
+                    Symuluje dostęp po tabelach <code>C001–C005</code> dla kluczy <code>ERL</code>, <code>ERS</code>, <code>MWS</code>. Automatycznie wykrywa brakujące grupy <code>KTGRD</code> / <code>KTGRM</code> i jednym kliknięciem dopisuje regułę konta G/L w bazie.
+                </p>
+                <div class="code-pills">
+                    <span class="code-pill">VKOA</span>
+                    <span class="code-pill">C001-C005</span>
+                    <span class="code-pill">KTGRD</span>
+                    <span class="code-pill">KTGRM</span>
+                    <span class="code-pill">VFX3</span>
+                </div>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">🧮</div>
+                <h3 class="feature-title">3. Symulator Arkusza Wyceny V/08 (RVAA01)</h3>
+                <p class="feature-text">
+                    Wylicza na żywo kroki 10–920 procedury kalkulacyjnej SD: cena bazowa <code>PR00</code>, rabaty <code>K004/K005/K007</code>, fracht <code>KF00</code>, podatek <code>MWST</code> oraz koszt własny <code>VPRS</code> i marżę handlową.
+                </p>
+                <div class="code-pills">
+                    <span class="code-pill">V/08</span>
+                    <span class="code-pill">VK11</span>
+                    <span class="code-pill">KONV / PRCD_ELEMENTS</span>
+                    <span class="code-pill">VPRS</span>
+                </div>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">🔄</div>
+                <h3 class="feature-title">4. Process Mining & Przepływ Dokumentów VBFA</h3>
+                <p class="feature-text">
+                    Automatyczna ekstrakcja procesów biznesowych z tabeli <code>VBAK/VBAP</code> (Standard O2C, Trójstronny TAS/TAB, Międzyfirmowy IV, Zwroty RE, Konsygnacja KB/KE) z wizualizacją łańcucha dokumentów.
+                </p>
+                <div class="code-pills">
+                    <span class="code-pill">VBFA</span>
+                    <span class="code-pill">VTAA / VTLA / VTFL</span>
+                    <span class="code-pill">VOV8</span>
+                    <span class="code-pill">VOV7</span>
+                </div>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">🛡️</div>
+                <h3 class="feature-title">5. Audyt Jakości Master Data (MDG Healthcheck)</h3>
+                <p class="feature-text">
+                    Skanuje kartoteki odbiorców (<code>KNA1/KNVV</code>), materiałów (<code>MARA/MVKE/MARC</code>) i dostawców (<code>LFA1/LFM1</code>). Oferuje 1-Click Auto-Fix naprawiający puste pola blokujące proces O2C.
+                </p>
+                <div class="code-pills">
+                    <span class="code-pill">KNA1 / KNVV</span>
+                    <span class="code-pill">MARA / MVKE</span>
+                    <span class="code-pill">LFA1 / LFM1</span>
+                </div>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">🔍</div>
+                <h3 class="feature-title">6. Spotlight 200+ T-Codes & Multi-Company</h3>
+                <p class="feature-text">
+                    Błyskawiczna wyszukiwarka <code>⌘K / Ctrl+K</code> ponad 200 transakcji SAP SD, możliwość rejestrowania własnych transakcji <code>Z* / Y*</code> oraz izolowana pamięć AI (Smart Memory) dla każdego profilu klienta.
+                </p>
+                <div class="code-pills">
+                    <span class="code-pill">⌘K Spotlight</span>
+                    <span class="code-pill">Z* Custom Codes</span>
+                    <span class="code-pill">Smart Memory</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="symulator" class="section-container">
+        <div class="section-header">
+            <h2 class="section-title">🧮 Interaktywny podgląd: Symulator Procedury Wyceny V/08 (RVAA01)</h2>
+            <p class="section-desc">Zmień ilość, rabat lub stawkę frachtu poniżej, aby zobaczyć jak silnik kalkulacyjny SAP SD przelicza kaskadę warunków cenowych i marżę.</p>
+        </div>
+
+        <div class="demo-showcase">
+            <div class="demo-controls">
+                <div class="demo-field">
+                    <label>Cena bazowa PR00 (EUR / PC)</label>
+                    <input type="number" id="sim-pr00" value="1250" min="10" step="10" class="demo-input" oninput="recalcLandingDemo()">
+                </div>
+                <div class="demo-field">
+                    <label>Ilość zamówienia (KWMENG)</label>
+                    <input type="number" id="sim-qty" value="10" min="1" step="1" class="demo-input" oninput="recalcLandingDemo()">
+                </div>
+                <div class="demo-field">
+                    <label>Rabat klienta K007 (%)</label>
+                    <input type="number" id="sim-disc" value="8" min="0" max="60" step="1" class="demo-input" oninput="recalcLandingDemo()">
+                </div>
+                <div class="demo-field">
+                    <label>Koszt własny VPRS (EUR / PC)</label>
+                    <input type="number" id="sim-vprs" value="820" min="1" step="10" class="demo-input" oninput="recalcLandingDemo()">
+                </div>
+            </div>
+
+            <div class="demo-table-wrap">
+                <table class="demo-table">
+                    <thead>
+                        <tr>
+                            <th>Krok</th>
+                            <th>Warunek (KSCHL)</th>
+                            <th>Opis w arkuszu kalkulacyjnym RVAA01</th>
+                            <th>Stawka</th>
+                            <th>Wartość (KWERT)</th>
+                            <th>Klucz konta (KVSL)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="landing-pricing-tbody">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <section id="architektura" class="section-container">
+        <div class="section-header">
+            <h2 class="section-title">Architektura Techniczna & Model Danych SAP</h2>
+            <p class="section-desc">Zbudowany w oparciu o modułowy backend Flask + DuckDB OLAP oraz natywny interfejs Apple iOS Glassmorphism.</p>
+        </div>
+
+        <div class="features-grid">
+            <div class="feature-card">
+                <h3 class="feature-title">🗄️ Silnik analityczny DuckDB</h3>
+                <p class="feature-text">
+                    Przechowuje pełne struktury słownikowe i transakcyjne: <code>sap_orders_vbak_vbap</code>, <code>sap_deliveries_likp_lips</code>, <code>sap_invoices_vbrk_vbrp</code>, <code>sap_customers_kna1_knvv</code>, <code>sap_materials_mara_mvke</code> oraz matrycę <code>sap_vkoa_rules</code>.
+                </p>
+            </div>
+            <div class="feature-card">
+                <h3 class="feature-title">🧩 Modułowy Frontend ES6 & CSS</h3>
+                <p class="feature-text">
+                    Rozdzielone warstwy domenowe: <code>auth.js</code>, <code>company_mdg.js</code>, <code>vkoa_pricing.js</code>, <code>processes.js</code>, <code>tcodes.js</code> oraz <code>app.js</code> z pełną responsywnością na ekranach Desktop, Tablet i Mobile.
+                </p>
+            </div>
+            <div class="feature-card">
+                <h3 class="feature-title">🔐 Bezpieczeństwo & Izolacja Klientów</h3>
+                <p class="feature-text">
+                    Ekran blokady iOS PIN / Face ID z syntezą dźwięku Web Audio API oraz przełącznik Multi-Company Workspace izolujący reguły AI i dane każdego obsługiwanego przedsiębiorstwa.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <footer class="site-footer">
+        <p><strong>SAP SD Enterprise Copilot</strong> — Order-to-Cash Architecture & Troubleshooting Suite (S/4HANA & ECC)</p>
+        <p style="margin-top: 6px;">
+            <a href="http://127.0.0.1:5001/" style="color: #60a5fa; text-decoration: none; font-weight: 600;">Uruchom Aplikację Lokalnie (Port 5001)</a> ·
+            <a href="https://github.com/zarakowskigrzegorz-ai/sap_copilot_enterprise" target="_blank" rel="noopener" style="color: #60a5fa; text-decoration: none; font-weight: 600;">GitHub Repository</a>
+        </p>
+    </footer>
+
+    <script>
+        function toggleSiteTheme() {
+            document.body.classList.toggle('light-theme');
+        }
+
+        function recalcLandingDemo() {
+            const pr00 = parseFloat(document.getElementById('sim-pr00').value) || 0;
+            const qty = parseFloat(document.getElementById('sim-qty').value) || 1;
+            const discPct = parseFloat(document.getElementById('sim-disc').value) || 0;
+            const vprsUnit = parseFloat(document.getElementById('sim-vprs').value) || 0;
+
+            const grossVal = pr00 * qty;
+            const discVal = -1 * +(grossVal * (discPct / 100)).toFixed(2);
+            const netAfterDisc = grossVal + discVal;
+            const freightVal = +(qty * 12.50).toFixed(2);
+            const netwr = +(netAfterDisc + freightVal).toFixed(2);
+            const mwstVal = +(netwr * 0.23).toFixed(2);
+            const totalGross = +(netwr + mwstVal).toFixed(2);
+            const vprsTotal = +(vprsUnit * qty).toFixed(2);
+            const marginVal = +(netwr - vprsTotal).toFixed(2);
+            const marginPct = netwr > 0 ? +((marginVal / netwr) * 100).toFixed(1) : 0;
+
+            const rows = [
+                { step: '10', code: 'PR00', name: 'Cena bazowa materiału (Gross Price)', rate: `${pr00.toFixed(2)} EUR / 1 PC`, val: `${grossVal.toFixed(2)} EUR`, kvsl: 'ERL', cls: '' },
+                { step: '105', code: 'K007', name: 'Rabat procentowy klienta (Customer Discount)', rate: `-${discPct.toFixed(1)} %`, val: `${discVal.toFixed(2)} EUR`, kvsl: 'ERS', cls: '' },
+                { step: '200', code: 'KF00', name: 'Koszty transportu i spedycji (Freight)', rate: `12.50 EUR / 1 PC`, val: `${freightVal.toFixed(2)} EUR`, kvsl: 'ERF', cls: '' },
+                { step: '800', code: 'NETW', name: 'Wartość Netto Pozycji (VBAP-NETWR)', rate: '—', val: `${netwr.toFixed(2)} EUR`, kvsl: '—', cls: 'highlight-row' },
+                { step: '900', code: 'MWST', name: 'Podatek należny VAT (Output Tax 23%)', rate: '23.0 %', val: `${mwstVal.toFixed(2)} EUR`, kvsl: 'MWS', cls: '' },
+                { step: '910', code: 'TOTL', name: 'Wartość Brutto Faktury (VBRK-NETWR + MWSBK)', rate: '—', val: `${totalGross.toFixed(2)} EUR`, kvsl: '—', cls: 'highlight-row' },
+                { step: '920', code: 'VPRS', name: `Koszt własny i Marża Handlowa (${marginPct}%)`, rate: `${vprsUnit.toFixed(2)} EUR (Stat.)`, val: `Marża: ${marginVal.toFixed(2)} EUR`, kvsl: 'statystyczny', cls: '' }
+            ];
+
+            document.getElementById('landing-pricing-tbody').innerHTML = rows.map(r => `
+                <tr class="${r.cls}">
+                    <td>${r.step}</td>
+                    <td><strong>${r.code}</strong></td>
+                    <td>${r.name}</td>
+                    <td>${r.rate}</td>
+                    <td>${r.val}</td>
+                    <td>${r.kvsl}</td>
+                </tr>
+            `).join('');
+        }
+
+        recalcLandingDemo();
+    </script>
+</body>
+</html>

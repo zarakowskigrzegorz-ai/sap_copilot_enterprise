@@ -3,7 +3,7 @@
 // =========================================================================
 
 let currentPin = "";
-const CORRECT_PIN = "2026";
+const VALID_PINS = ["1234", "2026"];
 let isLocked = true;
 let audioCtx = null;
 
@@ -137,7 +137,7 @@ function enterPin(digit) {
 
 function clearPin() {
     playKeyTapSound(0);
-    currentPin = "";
+    currentPin = currentPin.length > 0 ? currentPin.slice(0, -1) : "";
     updatePinDots();
 }
 
@@ -157,7 +157,7 @@ function updatePinDots(state = 'normal') {
 
 function verifyPin() {
     const dotsContainer = document.getElementById('pin-dots-container');
-    if (currentPin === CORRECT_PIN) {
+    if (VALID_PINS.includes(currentPin)) {
         updatePinDots('success');
         playUnlockChime();
         setTimeout(unlockApp, 220);
@@ -181,7 +181,7 @@ function triggerFaceID() {
     playKeyTapSound(8);
     const hud = document.getElementById('face-id-hud');
     const icon = document.getElementById('face-id-icon');
-    const text = document.getElementById('face-id-text');
+    const text = document.getElementById('face-id-status') || document.getElementById('face-id-text');
 
     if (hud) {
         hud.classList.add('show');
@@ -284,10 +284,20 @@ function toggleDarkMode() {
     showToast(isDark ? '🌙 Włączono tryb ciemny (iOS Dark)' : '☀️ Włączono tryb jasny (iOS Light)');
 }
 
+// Aliasy dla atrybutów HTML w index.html
+const handleKeypadPress = enterPin;
+const handleKeypadDelete = clearPin;
+const triggerFaceIdAuth = triggerFaceID;
+const playUnlockSuccess = playUnlockChime;
+
 // Eksport globalny dla atrybutów inline HTML
 window.enterPin = enterPin;
 window.clearPin = clearPin;
 window.triggerFaceID = triggerFaceID;
+window.handleKeypadPress = handleKeypadPress;
+window.handleKeypadDelete = handleKeypadDelete;
+window.triggerFaceIdAuth = triggerFaceIdAuth;
+window.playUnlockSuccess = playUnlockSuccess;
 window.lockApp = lockApp;
 window.handleLockCompanySelect = handleLockCompanySelect;
 window.openWelcomeOnboardingModal = openWelcomeOnboardingModal;

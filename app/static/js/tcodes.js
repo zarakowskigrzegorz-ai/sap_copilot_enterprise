@@ -54,19 +54,24 @@ async function loadTcodes(category = 'ALL', searchQuery = '') {
 
         const catData = await catRes.json();
         const tcData = await tcRes.json();
+        const tcodesList = tcData.tcodes || [];
+        const totalCount = tcData.total ?? tcData.count ?? tcodesList.length;
 
-        renderTcodesCategories(catData.categories || []);
-        renderTcodesGrid(tcData.tcodes || [], tcData.total || 0);
+        renderTcodesCategories(catData.categories || [], totalCount);
+        renderTcodesGrid(tcodesList, totalCount);
     } catch (err) {
         console.error("Błąd ładowania katalogu transakcji T-Codes:", err);
     }
 }
 
-function renderTcodesCategories(categories) {
+function renderTcodesCategories(categories, fallbackTotal = 0) {
     const bar = document.getElementById('tcodes-category-bar');
     if (!bar) return;
 
-    const totalAll = categories.reduce((acc, c) => acc + (c.count || 0), 0);
+    const normalized = categories.map(c =>
+        typeof c === 'string' ? { category: c, count: null } : { category: c.category, count: c.count }
+    );
+    const totalAll = normalized.reduce((acc, c) => acc + (c.count || 0), 0) || fallbackTotal;
 
     let html = `
         <button type="button" onclick="filterTcodesByCategory('ALL')" class="tcode-cat-pill ${currentTcodeCategory === 'ALL' ? 'active' : ''}">
@@ -74,12 +79,13 @@ function renderTcodesCategories(categories) {
         </button>
     `;
 
-    categories.forEach(cat => {
+    normalized.forEach(cat => {
         const isActive = currentTcodeCategory === cat.category;
         const safeCat = (cat.category || '').replace(/'/g, "\\'");
+        const countLabel = cat.count !== null && cat.count !== undefined ? ` (${cat.count})` : '';
         html += `
             <button type="button" onclick="filterTcodesByCategory('${safeCat}')" class="tcode-cat-pill ${isActive ? 'active' : ''}">
-                ${cat.category} (${cat.count})
+                ${cat.category}${countLabel}
             </button>
         `;
     });
