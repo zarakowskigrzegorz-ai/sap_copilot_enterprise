@@ -1,0 +1,1055 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SAP SD Enterprise Copilot</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body class="bg-ios">
+
+    <!-- ========================================================================= -->
+    <!-- EKRAN LOGOWANIA: CZYSTY APPLE LOCK SCREEN (BEZ DANYCH FIRMY PRZED LOGOWANIEM) -->
+    <!-- ========================================================================= -->
+    <div id="ios-lock-screen" class="ios-lock-screen">
+        <div class="ios-lock-card">
+            
+            <!-- Logo Aplikacji -->
+            <div class="ios-lock-icon">
+                <svg viewBox="0 0 100 100" width="34" height="34" fill="none">
+                    <polygon points="50,14 84,33 84,73 50,92 16,73 16,33" stroke="white" stroke-width="6" fill="rgba(255,255,255,0.12)"/>
+                    <circle cx="50" cy="53" r="10" fill="#60A5FA"/>
+                    <path d="M50,40 L53,49 L62,53 L53,57 L50,66 L47,57 L38,53 L47,49 Z" fill="white"/>
+                </svg>
+            </div>
+
+            <!-- Czysty Nagłówek Logowania -->
+            <h2 class="ios-lock-title">SAP Copilot</h2>
+            <p class="ios-lock-subtitle">Wprowadź kod PIN</p>
+
+            <!-- Wskaźniki PIN (4 kropki) -->
+            <div id="pin-dots-container" class="ios-pin-dots">
+                <span class="ios-pin-dot" id="dot-0"></span>
+                <span class="ios-pin-dot" id="dot-1"></span>
+                <span class="ios-pin-dot" id="dot-2"></span>
+                <span class="ios-pin-dot" id="dot-3"></span>
+            </div>
+
+            <!-- Klawiatura Numeryczna (Apple Clean Keypad) -->
+            <div class="ios-keypad-grid">
+                <button type="button" onclick="handleKeypadPress('1')" class="ios-keypad-btn">1</button>
+                <button type="button" onclick="handleKeypadPress('2')" class="ios-keypad-btn">2</button>
+                <button type="button" onclick="handleKeypadPress('3')" class="ios-keypad-btn">3</button>
+                <button type="button" onclick="handleKeypadPress('4')" class="ios-keypad-btn">4</button>
+                <button type="button" onclick="handleKeypadPress('5')" class="ios-keypad-btn">5</button>
+                <button type="button" onclick="handleKeypadPress('6')" class="ios-keypad-btn">6</button>
+                <button type="button" onclick="handleKeypadPress('7')" class="ios-keypad-btn">7</button>
+                <button type="button" onclick="handleKeypadPress('8')" class="ios-keypad-btn">8</button>
+                <button type="button" onclick="handleKeypadPress('9')" class="ios-keypad-btn">9</button>
+                <button type="button" onclick="triggerFaceIdAuth()" class="ios-keypad-btn ios-btn-action" title="Face ID">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M7 3H5a2 2 0 00-2 2v2m0 10v2a2 2 0 002 2h2m10-18h2a2 2 0 012 2v2m0 10v2a2 2 0 01-2 2h-2M9 10h.01M15 10h.01M9 15c1 1.5 5 1.5 6 0"></path>
+                    </svg>
+                </button>
+                <button type="button" onclick="handleKeypadPress('0')" class="ios-keypad-btn">0</button>
+                <button type="button" onclick="handleKeypadDelete()" class="ios-keypad-btn ios-btn-action" title="Cofnij">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M12 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2M3 12l6-6h11a2 2 0 012 2v8a2 2 0 01-2 2H9l-6-6z"></path>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Opcja Biometrii & PIN -->
+            <div class="ios-lock-actions">
+                <button type="button" onclick="triggerFaceIdAuth()" class="ios-bio-btn">
+                    <span>🧬</span> Zaloguj przez Face ID
+                </button>
+                <p id="lock-pin-hint" class="ios-hint-text">PIN: 1234</p>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Apple Face ID Skaner Modal -->
+    <div id="face-id-hud" class="face-id-hud">
+        <div id="face-id-icon" class="face-id-icon">
+            <svg width="48" height="48" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M7 3H5a2 2 0 00-2 2v2m0 10v2a2 2 0 002 2h2m10-18h2a2 2 0 012 2v2m0 10v2a2 2 0 01-2 2h-2M9 10h.01M15 10h.01M9 15c1 1.5 5 1.5 6 0"></path>
+            </svg>
+        </div>
+        <div id="face-id-status" class="face-id-status">
+            Skanowanie Face ID...
+        </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- MODAL: 👋 OKNO POWITALNE - INFORMACJA O DANYCH Z SAP                      -->
+    <!-- ========================================================================= -->
+    <div id="modal-welcome-onboarding" class="modal-overlay hidden">
+        <div class="welcome-modal-card">
+            
+            <div class="welcome-modal-header">
+                <div class="welcome-icon-box">
+                    <span class="welcome-icon">👋</span>
+                </div>
+                <div>
+                    <h3 class="welcome-modal-title">Witaj w SAP SD Copilot Enterprise</h3>
+                    <p class="welcome-modal-subtitle">Wymagane dane podstawowe z systemu SAP</p>
+                </div>
+            </div>
+
+            <div class="welcome-modal-body">
+                <div class="welcome-callout-box">
+                    <p class="welcome-main-desc">
+                        Aby Copilot działał poprawnie i bezbłędnie asystował w procesach <strong>Order-to-Cash (O2C)</strong> oraz diagnozował błędy fakturowania i logistyki, <strong>należy podać dane podstawowe</strong>, które muszą zostać załadowane z Twojego środowiska SAP:
+                    </p>
+                </div>
+
+                <div class="welcome-cards-grid">
+                    <div class="welcome-info-item">
+                        <span class="info-item-icon">👥</span>
+                        <div class="info-item-text">
+                            <strong>Klienci / Odbiorcy (KNA1 / KNVV)</strong>
+                            <span>Grupy rozliczeń <code>KTGRD</code> (kluczowe dla VKOA), warunki płatności <code>ZTERM</code> i podatki <code>TAXKD</code>.</span>
+                        </div>
+                    </div>
+
+                    <div class="welcome-info-item">
+                        <span class="info-item-icon">🏭</span>
+                        <div class="info-item-text">
+                            <strong>Dostawcy & Podwykonawcy (LFA1 / LFM1 / EINE)</strong>
+                            <span>Profile dostawców, <strong>podwykonawstwo uszlachetniania</strong> (ruch 541 w MIGO) oraz spedytorzy frachtowi.</span>
+                        </div>
+                    </div>
+
+                    <div class="welcome-info-item">
+                        <span class="info-item-icon">📦</span>
+                        <div class="info-item-text">
+                            <strong>Materiały & Indeksy (MARA / MVKE / MARC)</strong>
+                            <span>Grupy rozliczeń <code>KTGRM</code> (KOFI00), typy pozycji <code>MTPOS</code> (TAN/ZTAN) oraz kontrola dostępności ATP <code>MTVFP</code>.</span>
+                        </div>
+                    </div>
+
+                    <div class="welcome-info-item">
+                        <span class="info-item-icon">📑</span>
+                        <div class="info-item-text">
+                            <strong>Struktura Firmy & Reguły VKOA (EC01 / VKOA)</strong>
+                            <span>Jednostka <code>BUKRS</code>, plan kont <code>KTOPL</code>, obszary sprzedaży oraz matryca kont przychodowych w module FI.</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="welcome-footer-hint">
+                    💡 Dane możesz załadować 1-kliknięciem z gotowych raportów SAP (np. <strong>EC01</strong>, <strong>VKOA</strong>), uzupełnić ręcznie lub zaimportować z pliku CSV.
+                </div>
+            </div>
+
+            <div class="welcome-modal-footer">
+                <button type="button" onclick="handleWelcomeAcknowledge()" class="ios-btn-primary btn-welcome-ack">
+                    Rozumiem
+                </button>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- MODAL: ⚙️ MASTER DATA & AUTO-SETUP Z RAPORTÓW SAP (PO ZALOGOWANIU)        -->
+    <!-- ========================================================================= -->
+    <div id="modal-master-data" class="modal-overlay hidden">
+        <div class="master-data-modal">
+            
+            <div class="modal-header">
+                <div>
+                    <h3 class="modal-title">⚙️ Konfiguracja Profilu Firmy & Master Data</h3>
+                    <p class="modal-subtitle">Skonfiguruj główne parametry SD, aby Copilot wiedział jak interpretować procesy O2C.</p>
+                </div>
+                <button type="button" onclick="closeMasterDataModal()" class="btn-close-modal">✕</button>
+            </div>
+
+            <div class="modal-body-scroll">
+                
+                <!-- Sekcja 1: Auto-Setup z Raportów SAP -->
+                <div class="setup-section">
+                    <div class="section-label">
+                        <span>⚡</span> Opcja 1: Załaduj raport SAP (Automatyczna konfiguracja profilu)
+                    </div>
+                    <p class="section-desc">Kliknij wybrany raport z SAP, aby automatycznie załadować pełną strukturę organizacyjną i reguły wyceny:</p>
+
+                    <div class="report-presets-grid">
+                        
+                        <!-- Preset 1: Produkcja EC01 -->
+                        <div class="report-preset-card" onclick="applyReportPreset('EC01_MANUFACTURING')">
+                            <div class="preset-card-top">
+                                <span class="preset-icon">🏭</span>
+                                <div>
+                                    <h4 class="preset-name">Raport Struktury EC01 (Produkcja & Przemysł)</h4>
+                                    <span class="preset-industry">Przemysł maszynowy & wytwórczy</span>
+                                </div>
+                            </div>
+                            <div class="preset-tags">
+                                <span class="preset-tag">BUKRS: 1000</span>
+                                <span class="preset-tag">KTOPL: INT</span>
+                                <span class="preset-tag">VKORG: 1000</span>
+                                <span class="preset-tag">EUR</span>
+                            </div>
+                            <button type="button" class="preset-apply-btn">⚡ Załaduj raport EC01</button>
+                        </div>
+
+                        <!-- Preset 2: Retail FMCG -->
+                        <div class="report-preset-card" onclick="applyReportPreset('RETAIL_FMCG')">
+                            <div class="preset-card-top">
+                                <span class="preset-icon">🛒</span>
+                                <div>
+                                    <h4 class="preset-name">Raport Dystrybucji VKOA (Retail & FMCG)</h4>
+                                    <span class="preset-industry">Handel detaliczny i dystrybucja</span>
+                                </div>
+                            </div>
+                            <div class="preset-tags">
+                                <span class="preset-tag">BUKRS: 2000</span>
+                                <span class="preset-tag">KTOPL: PL01</span>
+                                <span class="preset-tag">VKORG: 2000</span>
+                                <span class="preset-tag">PLN</span>
+                            </div>
+                            <button type="button" class="preset-apply-btn">⚡ Załaduj raport Retail</button>
+                        </div>
+
+                        <!-- Preset 3: Tech Cloud -->
+                        <div class="report-preset-card" onclick="applyReportPreset('TECH_CLOUD')">
+                            <div class="preset-card-top">
+                                <span class="preset-icon">☁️</span>
+                                <div>
+                                    <h4 class="preset-name">Raport Usług SPRO (Tech & Cloud)</h4>
+                                    <span class="preset-industry">SaaS, licencje i subskrypcje IT</span>
+                                </div>
+                            </div>
+                            <div class="preset-tags">
+                                <span class="preset-tag">BUKRS: 3000</span>
+                                <span class="preset-tag">KTOPL: US01</span>
+                                <span class="preset-tag">VKORG: 3000</span>
+                                <span class="preset-tag">USD</span>
+                            </div>
+                            <button type="button" class="preset-apply-btn">⚡ Załaduj raport Tech</button>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- Sekcja 2: Ręczne wpisanie Master Data -->
+                <div class="setup-section mt-4">
+                    <div class="section-label">
+                        <span>✏️</span> Opcja 2: Ręczne zdefiniowanie Master Data
+                    </div>
+                    
+                    <form onsubmit="handleManualMasterDataSubmit(event)" class="manual-form-grid">
+                        <div class="form-group-full">
+                            <label class="form-label">Nazwa Firmy / Klienta</label>
+                            <input type="text" id="manual-name" required placeholder="np. Automotive Sp. z o.o." class="form-input">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Plan Kont (KTOPL)</label>
+                            <input type="text" id="manual-ktopl" required placeholder="INT" class="form-input uppercase">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Jedn. Gospodarcza (BUKRS)</label>
+                            <input type="text" id="manual-bukrs" required placeholder="1000" class="form-input">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Org. Sprzedaży (VKORG)</label>
+                            <input type="text" id="manual-vkorg" required placeholder="1000" class="form-input">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Kanał Dystr. (VTWEG)</label>
+                            <input type="text" id="manual-vtweg" required placeholder="10" class="form-input">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Sektor (SPART)</label>
+                            <input type="text" id="manual-spart" required placeholder="00" class="form-input">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Waluta (WAERS)</label>
+                            <input type="text" id="manual-waers" required placeholder="EUR" class="form-input uppercase">
+                        </div>
+                        <div class="form-group-full form-actions">
+                            <button type="submit" class="ios-btn-primary">
+                                💾 Zapisz Master Data i Uruchom Copilota
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Sekcja: Inteligencja Handlowo-Logistyczna & Próbka Korporacyjna (VBAK, KNVV, LIPS, TVxx) -->
+                <div class="setup-section mt-4 intel-section-container">
+                    <div class="section-label-between">
+                        <div class="section-label">
+                            <span>📊</span> Profil Handlowo-Logistyczny & Wolumen SAP (3 500 VBAK/VBAP)
+                        </div>
+                        <div class="intel-action-buttons">
+                            <button type="button" onclick="seedEnterpriseData(true)" class="btn-seed-enterprise" id="btn-seed-enterprise" title="Przeładuj pełny zbiór 3 500 pozycji zleceniowych, 300 kont i słowniki TVxx">
+                                ⚡ Załaduj próbkę korporacyjną
+                            </button>
+                            <button type="button" onclick="loadProfileIntelligence()" class="btn-refresh-intel" title="Odśwież metryki profilu">
+                                🔄 Odśwież
+                            </button>
+                        </div>
+                    </div>
+                    <p class="section-desc">Głęboka analiza 4 strumieni SAP: wolumen obrotu, jednostki miary, podział MTO vs MTS, lead time logistyczny oraz żargon kodów Z*:</p>
+
+                    <!-- Podsumowanie wykonawcze -->
+                    <div class="intel-executive-summary" id="intel-executive-summary">
+                        <div class="intel-loading">Ładowanie metryk korporacyjnych...</div>
+                    </div>
+
+                    <!-- Siatka 4 Filarów Danych SAP -->
+                    <div class="intel-pillars-grid mt-3">
+                        <!-- Filar 1: VBAK + VBAP -->
+                        <div class="intel-pillar-card">
+                            <div class="pillar-header">
+                                <span class="pillar-icon">📦</span>
+                                <div>
+                                    <h5 class="pillar-title">Zlecenia Sprzedaży (VBAK + VBAP)</h5>
+                                    <span class="pillar-subtitle">3 000 – 5 000 pozycji</span>
+                                </div>
+                            </div>
+                            <div class="pillar-metrics">
+                                <div class="p-metric">
+                                    <span class="p-metric-val" id="intel-vbak-cnt">-</span>
+                                    <span class="p-metric-lbl">Pozycji</span>
+                                </div>
+                                <div class="p-metric">
+                                    <span class="p-metric-val" id="intel-vbak-orders">-</span>
+                                    <span class="p-metric-lbl">Zleceń (VBELN)</span>
+                                </div>
+                                <div class="p-metric">
+                                    <span class="p-metric-val" id="intel-vbak-turnover">-</span>
+                                    <span class="p-metric-lbl">Łączny obrót</span>
+                                </div>
+                                <div class="p-metric">
+                                    <span class="p-metric-val" id="intel-vbak-avg">-</span>
+                                    <span class="p-metric-lbl">Śr. poz.</span>
+                                </div>
+                            </div>
+                            <div class="pillar-subblock mt-2">
+                                <span class="pillar-sub-lbl">Jednostki miary (VRKME):</span>
+                                <div class="pillar-tags-row" id="intel-units-tags"></div>
+                            </div>
+                            <div class="pillar-subblock mt-2">
+                                <span class="pillar-sub-lbl">Modele operacyjne (PSTYV):</span>
+                                <div class="pillar-tags-row" id="intel-models-tags"></div>
+                            </div>
+                        </div>
+
+                        <!-- Filar 2: KNVV -->
+                        <div class="intel-pillar-card">
+                            <div class="pillar-header">
+                                <span class="pillar-icon">👥</span>
+                                <div>
+                                    <h5 class="pillar-title">Portfel Rynkowy (KNVV)</h5>
+                                    <span class="pillar-subtitle">200 – 500 kont klientów</span>
+                                </div>
+                            </div>
+                            <div class="pillar-metrics">
+                                <div class="p-metric">
+                                    <span class="p-metric-val" id="intel-knvv-cnt">-</span>
+                                    <span class="p-metric-lbl">Kont klientów</span>
+                                </div>
+                                <div class="p-metric">
+                                    <span class="p-metric-val" id="intel-knvv-dom">-</span>
+                                    <span class="p-metric-lbl">Kraj (PL)</span>
+                                </div>
+                                <div class="p-metric">
+                                    <span class="p-metric-val" id="intel-knvv-exp">-</span>
+                                    <span class="p-metric-lbl">Eksport</span>
+                                </div>
+                                <div class="p-metric">
+                                    <span class="p-metric-val" id="intel-knvv-zterm">-</span>
+                                    <span class="p-metric-lbl">Płatność</span>
+                                </div>
+                            </div>
+                            <div class="pillar-subblock mt-2">
+                                <span class="pillar-sub-lbl">Dominujące Incoterms (INCO1):</span>
+                                <div class="pillar-tags-row" id="intel-incoterms-tags"></div>
+                            </div>
+                            <div class="pillar-subblock mt-2">
+                                <span class="pillar-sub-lbl">Segmentacja rynkowa (KDGRP):</span>
+                                <div class="pillar-tags-row" id="intel-kdgrp-tags"></div>
+                            </div>
+                        </div>
+
+                        <!-- Filar 3: LIPS + VBRK -->
+                        <div class="intel-pillar-card">
+                            <div class="pillar-header">
+                                <span class="pillar-icon">🚚</span>
+                                <div>
+                                    <h5 class="pillar-title">Fulfillment & Logistyka (LIPS + VBRK)</h5>
+                                    <span class="pillar-subtitle">1 000 – 2 000 przepływów</span>
+                                </div>
+                            </div>
+                            <div class="pillar-metrics">
+                                <div class="p-metric">
+                                    <span class="p-metric-val" id="intel-lips-cnt">-</span>
+                                    <span class="p-metric-lbl">Dokumentów</span>
+                                </div>
+                                <div class="p-metric">
+                                    <span class="p-metric-val text-primary" id="intel-lips-lead">-</span>
+                                    <span class="p-metric-lbl">Śr. Dni do PGI</span>
+                                </div>
+                                <div class="p-metric">
+                                    <span class="p-metric-val" id="intel-lips-vstel">-</span>
+                                    <span class="p-metric-lbl">Punkty wysyłki</span>
+                                </div>
+                                <div class="p-metric">
+                                    <span class="p-metric-val" id="intel-lips-routes">-</span>
+                                    <span class="p-metric-lbl">Trasy</span>
+                                </div>
+                            </div>
+                            <div class="pillar-subblock mt-2">
+                                <span class="pillar-sub-lbl">Punkty wysyłki (VSTEL):</span>
+                                <div class="pillar-tags-row" id="intel-vstel-tags"></div>
+                            </div>
+                            <div class="pillar-subblock mt-2">
+                                <span class="pillar-sub-lbl">Rodzaje dostaw i faktur:</span>
+                                <div class="pillar-tags-row" id="intel-flow-tags"></div>
+                            </div>
+                        </div>
+
+                        <!-- Filar 4: TVAK, TVTW, TVBUR -->
+                        <div class="intel-pillar-card">
+                            <div class="pillar-header">
+                                <span class="pillar-icon">🏢</span>
+                                <div>
+                                    <h5 class="pillar-title">Słowniki Konfiguracyjne (TVxx)</h5>
+                                    <span class="pillar-subtitle">Żargon i Kody Z*</span>
+                                </div>
+                            </div>
+                            <div class="pillar-metrics">
+                                <div class="p-metric">
+                                    <span class="p-metric-val" id="intel-jargon-cnt">-</span>
+                                    <span class="p-metric-lbl">Wpisów ogółem</span>
+                                </div>
+                                <div class="p-metric">
+                                    <span class="p-metric-val" id="intel-jargon-zcodes">-</span>
+                                    <span class="p-metric-lbl">Kodów Z*</span>
+                                </div>
+                            </div>
+                            <div class="pillar-subblock mt-2">
+                                <span class="pillar-sub-lbl">Żargon i kody Z* firmy:</span>
+                                <div class="pillar-z-list" id="intel-z-list"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Rozwijana przeglądarka pozycji VBAK/VBAP -->
+                    <div class="intel-details-accordion mt-3">
+                        <details class="intel-details-box" id="orders-accordion-box">
+                            <summary class="intel-summary-btn" onclick="toggleOrdersTable()">
+                                <span>📋</span> Podgląd tabelaryczny pozycji zleceń (VBAK + VBAP)
+                            </summary>
+                            <div class="intel-table-wrapper mt-2">
+                                <div class="table-filter-bar">
+                                    <span class="filter-label">Filtruj wg kategorii pozycji (PSTYV):</span>
+                                    <button type="button" onclick="filterOrdersTable('')" class="table-filter-chip active" id="chip-pstyv-all">Wszystkie</button>
+                                    <button type="button" onclick="filterOrdersTable('TAN')" class="table-filter-chip" id="chip-pstyv-tan">TAN (MTS)</button>
+                                    <button type="button" onclick="filterOrdersTable('TAK')" class="table-filter-chip" id="chip-pstyv-tak">TAK (MTO)</button>
+                                    <button type="button" onclick="filterOrdersTable('TAS')" class="table-filter-chip" id="chip-pstyv-tas">TAS (Dropship)</button>
+                                    <button type="button" onclick="filterOrdersTable('KEN')" class="table-filter-chip" id="chip-pstyv-ken">KEN (Konsygnacja)</button>
+                                    <button type="button" onclick="filterOrdersTable('L2N')" class="table-filter-chip" id="chip-pstyv-l2n">L2N (Usługi)</button>
+                                </div>
+                                <div class="table-scroll-container">
+                                    <table class="intel-data-table" id="orders-data-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Nr zlecenia</th>
+                                                <th>Poz.</th>
+                                                <th>Data</th>
+                                                <th>AUART</th>
+                                                <th>Materiał</th>
+                                                <th>Nazwa pozycji</th>
+                                                <th>Ilość</th>
+                                                <th>Jedn.</th>
+                                                <th>Cena netto</th>
+                                                <th>Wartość netto</th>
+                                                <th>PSTYV</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="orders-table-tbody">
+                                            <tr><td colspan="11" class="text-center py-3">Kliknij, aby załadować pozycje z tabeli VBAK/VBAP...</td></tr>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </details>
+                    </div>
+                </div>
+
+                <!-- Sekcja 3: Master Data Governance (MDG) & Audyt Jakości Danych -->
+                <div class="setup-section mt-4">
+                    <div class="section-label">
+                        <span>🛡️</span> Sekcja 3: Master Data Governance (MDG) & Audyt O2C
+                    </div>
+                    <p class="section-desc">Audyt gotowości kartotek do bezbłędnego zwalniania faktur (VF067), determinacji podatków (FF704) oraz ATP (M7021):</p>
+
+                    <div class="mdg-health-card">
+                        <div class="mdg-health-header">
+                            <div class="mdg-score-badge" id="mdg-score-badge">
+                                <span class="score-number" id="mdg-score-num">--%</span>
+                                <span class="score-label">Data Quality Score</span>
+                            </div>
+                            <div class="mdg-status-info">
+                                <div class="mdg-status-title" id="mdg-status-text">Weryfikacja profilu...</div>
+                                <div class="mdg-status-subtitle" id="mdg-status-desc">Sprawdzanie powiązań KNA1, LFA1, MVKE i VKOA</div>
+                            </div>
+                            <div class="mdg-header-actions">
+                                <button type="button" onclick="runMdgAutoFix('ALL')" id="btn-mdg-autofix-all" class="btn-mdg-autofix" title="Automatycznie uzupełnij brakujące pola KTGRD, KTGRM, TAXKD, MTVFP, Incoterms oraz luki w Tabeli 001 VKOA">
+                                    ⚡ Auto-Fix MDG (100%)
+                                </button>
+                                <button type="button" onclick="loadMdgHealthcheck()" class="btn-refresh-mdg" title="Przeładuj audyt MDG">🔄 Odśwież</button>
+                            </div>
+                        </div>
+
+                        <!-- Mini statystyki MDG -->
+                        <div class="mdg-stats-grid">
+                            <div class="mdg-stat-box">
+                                <span class="stat-num" id="stat-cust-cnt">-</span>
+                                <span class="stat-title">Klienci (KNA1/KNVV)</span>
+                            </div>
+                            <div class="mdg-stat-box">
+                                <span class="stat-num" id="stat-mat-cnt">-</span>
+                                <span class="stat-title">Materiały (MVKE/MARC)</span>
+                            </div>
+                            <div class="mdg-stat-box">
+                                <span class="stat-num" id="stat-vendor-cnt">-</span>
+                                <span class="stat-title">Dostawcy & Subcon (LFA1)</span>
+                            </div>
+                            <div class="mdg-stat-box">
+                                <span class="stat-num" id="stat-vkoa-cnt">-</span>
+                                <span class="stat-title">Reguły VKOA</span>
+                            </div>
+                        </div>
+
+                        <!-- Lista wykrytych uwag i luk -->
+                        <div id="mdg-issues-container" class="mdg-issues-list mt-3">
+                            <div class="mdg-loading">Ładowanie audytu jakości danych...</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sekcja 4: Import z SAP CSV & Aktualizacja Kartotek -->
+                <div class="setup-section mt-4">
+                    <div class="section-label">
+                        <span>📥</span> Sekcja 4: Import Danych Podstawowych z SAP CSV (SE16N / MM60 / VCUST)
+                    </div>
+                    <p class="section-desc">Zasil bazę profilu firmy danymi wyeksportowanymi bezpośrednio z systemu SAP (separator <code>;</code> lub <code>,</code>):</p>
+
+                    <div class="csv-import-box">
+                        <div class="csv-import-controls">
+                            <div class="csv-type-select-group">
+                                <label class="csv-label">Typ kartoteki do zaimportowania:</label>
+                                <select id="csv-data-type" class="form-input select-styled" onchange="handleCsvTypeChange()">
+                                    <option value="customers">👥 Klienci / Odbiorcy (KNA1 + KNVV)</option>
+                                    <option value="vendors">🏭 Dostawcy & Podwykonawcy (LFA1 + LFM1 + EINE)</option>
+                                    <option value="materials">📦 Materiały i Indeksy Sprzedaży (MARA + MVKE + MARC)</option>
+                                </select>
+                            </div>
+                            <div class="csv-actions-quick">
+                                <button type="button" onclick="loadSampleCsvTemplate()" class="btn-sample-csv">
+                                    📋 Wklej wzorzec z SAP
+                                </button>
+                                <button type="button" onclick="downloadCsvTemplate()" class="btn-download-csv">
+                                    📥 Pobierz plik CSV
+                                </button>
+                            </div>
+                        </div>
+
+                        <textarea id="csv-content-input" rows="4" class="csv-textarea" placeholder="Wklej tutaj wiersze z nagłówkami lub kliknij 'Wklej wzorzec z SAP'..."></textarea>
+
+                        <div class="csv-submit-row">
+                            <span class="csv-hint">Wskazówka: Copilot zwaliduje wymagane pola (np. KTGRD, KTGRM, MTVFP) i od razu zaktualizuje Data Quality Score.</span>
+                            <button type="button" onclick="submitCsvImport()" class="ios-btn-primary btn-import-run">
+                                🚀 Zaimportuj dane do profilu
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Sekcja 5: Ściągawka SAP: Wymagane Tabele i Transakcje -->
+                <div class="setup-section mt-4">
+                    <details class="sap-guide-details">
+                        <summary class="section-label cursor-pointer">
+                            <span>📚</span> Jakie dane są wymagane z SAP i skąd je pobrać? (Rozwiń specyfikację tabel)
+                        </summary>
+                        <div class="sap-guide-content mt-2">
+                            <table class="sap-ref-table">
+                                <thead>
+                                    <tr>
+                                        <th>Obszar / Kartoteka</th>
+                                        <th>Główne Tabele SAP</th>
+                                        <th>Transakcje / Raporty</th>
+                                        <th>Kluczowe Pola MDG</th>
+                                        <th>Dlaczego Pilot ich potrzebuje?</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td><strong>Klienci (Odbiorcy)</strong></td>
+                                        <td><code>KNA1</code>, <code>KNVV</code>, <code>KNVI</code></td>
+                                        <td><code>VCUST</code>, <code>XD03</code>, <code>BP</code>, <code>SE16N</code></td>
+                                        <td><code>KUNNR</code>, <code>VKORG</code>, <code>VTWEG</code>, <code>KTGRD</code>, <code>TAXKD</code>, <code>ZTERM</code></td>
+                                        <td>Brak <code>KTGRD</code> blokuje fakturę (błąd <code>VF067</code> w VFX3). Brak <code>TAXKD</code> uniemożliwia wyliczenie VAT (błąd <code>FF704</code>).</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Dostawcy & Podwykonawcy</strong></td>
+                                        <td><code>LFA1</code>, <code>LFM1</code>, <code>EINE</code>, <code>BUT000</code></td>
+                                        <td><code>MK03</code>, <code>XK03</code>, <code>ME1M</code>, <code>BP</code>, <code>SE16N</code></td>
+                                        <td><code>LIFNR</code>, <code>EKORG</code>, <code>STCEG</code>, <code>ZTERM</code>, <code>Infotyp 3 (Subcontracting)</code></td>
+                                        <td>Profilowanie podwykonawców (ruch materiałowy 541, zlecenia podwykonawstwa BANS) vs spedytorów frachtu (warunek cenowy <code>KF00</code>).</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Materiały (Indeksy)</strong></td>
+                                        <td><code>MARA</code>, <code>MVKE</code>, <code>MARC</code>, <code>MAKT</code></td>
+                                        <td><code>MM60</code> (Katalog), <code>MM03</code>, <code>SE16N</code></td>
+                                        <td><code>MATNR</code>, <code>MAKTX</code>, <code>KTGRM</code>, <code>MTPOS</code>, <code>MTVFP</code>, <code>STPRS</code></td>
+                                        <td><code>KTGRM</code> steruje determinacją kont KOFI00 w VKOA. <code>MTPOS</code> dobiera pozycję (TAN/ZTAN). <code>MTVFP</code> steruje ATP (brak = <code>M7021</code>).</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>Reguły Finansowe VKOA</strong></td>
+                                        <td><code>C001</code>-<code>C005</code>, <code>T001</code>, <code>T004</code></td>
+                                        <td><code>VKOA</code>, <code>EC01</code>, <code>OB40</code></td>
+                                        <td><code>KTOPL</code>, <code>VKORG</code>, <code>KTGRD</code>, <code>KTGRM</code>, <code>KVSL</code> (ERL/ERS/MWS), <code>SAKNR</code></td>
+                                        <td>Matryca księgowań faktur do modułu FI bez konieczności ręcznego poprawiania każdej faktury.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </details>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- MODAL: 🔍 SPOTLIGHT SEARCH 200+ T-CODES SAP SD (⌘K / Ctrl+K)             -->
+    <!-- ========================================================================= -->
+    <div id="modal-tcodes-spotlight" class="modal-overlay hidden">
+        <div class="master-data-modal tcodes-spotlight-modal">
+            <div class="modal-header">
+                <div>
+                    <h3 class="modal-title">🔍 Katalog 200+ Transakcji SAP SD & SPRO (Spotlight Search)</h3>
+                    <p class="modal-subtitle">Szukaj po kodzie T-Code (np. <code>VA01</code>, <code>VKOA</code>, <code>V/08</code>, <code>VTFL</code>), tabeli SAP lub słowie kluczowym. Skrót: <kbd>⌘K</kbd></p>
+                </div>
+                <button type="button" onclick="closeTcodesSpotlightModal()" class="btn-close-modal">✕</button>
+            </div>
+
+            <div class="spotlight-search-bar">
+                <span class="spotlight-search-icon">🔍</span>
+                <input type="text" id="tcode-search-input" oninput="handleTcodeSearchInput(this.value)" placeholder="Wpisz kod transakcji (np. VKOA, V/08, VFX3, OVZ9) lub nazwę tabeli (np. KNVV, TVAK)..." class="spotlight-input">
+                <span id="tcodes-total-counter" class="ios-badge ios-badge-blue">200+ T-Codes</span>
+            </div>
+
+            <div id="tcodes-category-bar" class="spotlight-categories-row">
+                <!-- Dynamicznie renderowane kategorie T-Code -->
+            </div>
+
+            <div class="modal-body-scroll spotlight-body-scroll">
+                <div id="tcodes-grid-container" class="tcodes-grid-box">
+                    <!-- Dynamicznie renderowane karty transakcji -->
+                </div>
+
+                <!-- Dodawanie własnej transakcji Z* firmy -->
+                <details class="sap-guide-details mt-3">
+                    <summary class="section-label cursor-pointer">
+                        <span>➕</span> Dodaj własną transakcję kustomizowaną Z* / Y* dla aktywnego profilu firmy
+                    </summary>
+                    <form onsubmit="handleCreateCustomTcode(event)" class="manual-form-grid mt-2">
+                        <div class="form-group">
+                            <label class="form-label">Kod transakcji (Z* / Y*)</label>
+                            <input type="text" id="custom-tcode-code" required placeholder="np. ZSD_EDI_MON" class="form-input uppercase">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Kategoria SD</label>
+                            <input type="text" id="custom-tcode-cat" value="Custom Z-Transactions" class="form-input">
+                        </div>
+                        <div class="form-group-full">
+                            <label class="form-label">Nazwa krótka transakcji</label>
+                            <input type="text" id="custom-tcode-name" required placeholder="np. Monitor komunikatów IDoc / EDI zamówień klientów" class="form-input">
+                        </div>
+                        <div class="form-group-full">
+                            <label class="form-label">Opis biznesowy i zastosowanie</label>
+                            <input type="text" id="custom-tcode-desc" required placeholder="np. Przetwarzanie przychodzących IDoc ORDERS05 i re-procesowanie błędów wyceny" class="form-input">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Powiązane tabele SAP</label>
+                            <input type="text" id="custom-tcode-tables" placeholder="VBAK, VBAP, EDIDC" class="form-input uppercase">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Ścieżka SPRO / Program ABAP</label>
+                            <input type="text" id="custom-tcode-spro" placeholder="Z_SD_IDOC_COCKPIT" class="form-input">
+                        </div>
+                        <div class="form-group-full form-actions">
+                            <button type="submit" class="ios-btn-primary">💾 Dodaj transakcję Z* do katalogu firmy</button>
+                        </div>
+                    </form>
+                </details>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================================================= -->
+    <!-- GŁÓWNY NAGŁÓWEK APPLE iOS GLASS BAR                                      -->
+    <!-- ========================================================================= -->
+    <header class="ios-glass-bar">
+        
+        <!-- Logo i Tytuł -->
+        <div class="header-left">
+            <div class="app-icon-small">⚡</div>
+            <div>
+                <div class="app-title-row">
+                    <span class="app-title">SAP SD Copilot</span>
+                    <span class="app-tag">S/4HANA</span>
+                </div>
+                <div class="app-subtitle">Order-to-Cash Enterprise Assistant</div>
+            </div>
+        </div>
+
+        <!-- 3 Główne Moduły -->
+        <nav class="ios-segmented-control">
+            <button onclick="switchTab('chat')" id="btn-chat" class="ios-segment-btn active">
+                <span>💬</span> Asystent
+            </button>
+            <button onclick="switchTab('vkoa')" id="btn-vkoa" class="ios-segment-btn">
+                <span>🩺</span> VKOA & Wycena V/08
+            </button>
+            <button onclick="switchTab('process')" id="btn-process" class="ios-segment-btn">
+                <span>🔄</span> Procesy & Doc Flow
+            </button>
+        </nav>
+
+        <!-- Profil, Przełącznik Firm, T-Codes (⌘K) i Zablokuj -->
+        <div class="header-right">
+            <div class="profile-header-group">
+                <div class="profile-name-badge" title="Przełącz aktywny profil firmy (Multi-Company Workspace)">
+                    <span class="company-label">🏢 Firma:</span>
+                    <span id="header-company-name" class="company-value hidden">Global Manufacturing Corp (Klient A)</span>
+                    <select id="header-company-select" onchange="handleCompanyChange(this.value)" class="header-company-select">
+                        <option value="CLIENT_A">Global Manufacturing Corp (CLIENT_A)</option>
+                        <option value="CLIENT_B">Nordic Retail & Tech AB (CLIENT_B)</option>
+                    </select>
+                </div>
+                <button id="btn-edit-profile" onclick="openMasterDataModal()" class="btn-edit-profile-pill" title="Konfiguracja Master Data, MDG Healthcheck & Auto-Fix">
+                    ⚙️ Master Data & MDG
+                </button>
+            </div>
+
+            <button onclick="openTcodesSpotlightModal()" class="ios-btn-secondary btn-tcodes-spotlight" title="Otwórz wyszukiwarkę 200+ transakcji SAP SD (⌘K / Ctrl+K)">
+                <span>🔍</span> T-Codes <span class="cmd-k-pill">⌘K</span>
+            </button>
+
+            <button onclick="lockApp()" class="ios-btn-secondary" title="Zablokuj sesję (PIN)">
+                <span>🔒</span> Zablokuj
+            </button>
+
+            <button onclick="toggleDarkMode()" id="btn-theme-toggle" class="btn-circle-theme" title="Przełącz motyw">
+                🌙
+            </button>
+        </div>
+    </header>
+
+    <!-- ========================================================================= -->
+    <!-- GŁÓWNY OBSZAR ROBOCZY APLIKACJI                                          -->
+    <!-- ========================================================================= -->
+    <main class="main-container">
+
+        <!-- ZAKŁADKA 1: 💬 ASYSTENT SD (CZAT I EKSPERTYZY BŁĘDÓW) -->
+        <div id="view-chat" class="ios-card view-container">
+            <div class="chat-header">
+                <div class="chat-status">
+                    <span class="status-dot"></span>
+                    <span id="chat-client-indicator" class="chat-indicator-text">
+                        Profil aktywny: Global Manufacturing Corp (Klient A)
+                    </span>
+                </div>
+                <div class="chat-header-actions">
+                    <button onclick="clearChat()" class="btn-clear-chat">
+                        Wyczyść rozmowę
+                    </button>
+                </div>
+            </div>
+
+            <div id="chat-messages" class="chat-messages-box">
+                <div class="chat-bubble-ai">
+                    <span class="bubble-title">Dzień dobry! Jestem Twoim Senior Architektem SAP SD Copilot.</span>
+                    Pracuję na aktywnej konfiguracji i regułach modułu <strong>Sales and Distribution</strong>. Pomogę Ci w natychmiastowej diagnostyce dowolnych błędów O2C (np. <strong>VF067</strong>, <strong>V1382</strong>, <strong>FF704</strong>, <strong>VL150</strong>, <strong>M7021</strong>) oraz przygotuję gotowe warianty rozwiązań.
+                </div>
+            </div>
+
+            <!-- Pasek Szybkich Promptów Procesów Przedsiębiorstwa & Błędów -->
+            <div class="chat-quick-pills-bar">
+                <button type="button" onclick="sendQuickQuery('Jak skonfigurować handel trójstronny TAS i dropshipping?')" class="chat-quick-pill" title="Handel trójstronny TAS">
+                    <span>🛒</span> Handel trójstronny TAS
+                </button>
+                <button type="button" onclick="sendQuickQuery('Jak przebiega produkcja MTO pod zlecenie klienta (TAK / klasa 040)?')" class="chat-quick-pill" title="Make-to-Order MTO">
+                    <span>🏭</span> Produkcja MTO (TAK)
+                </button>
+                <button type="button" onclick="sendQuickQuery('Jak działa gospodarka konsygnacyjna KB/KE/KR/KA i zapas W?')" class="chat-quick-pill" title="Konsygnacja">
+                    <span>📦</span> Konsygnacja (Zapas W)
+                </button>
+                <button type="button" onclick="sendQuickQuery('Jak skonfigurować fakturowanie międzyfirmowe IV i warunek PI01?')" class="chat-quick-pill" title="Sprzedaż międzyfirmowa">
+                    <span>🏢</span> Sprzedaż Intercompany (IV)
+                </button>
+                <button type="button" onclick="sendQuickQuery('Jak rozliczać usługi nakładcze Time & Material przez DP90 i profil DIP?')" class="chat-quick-pill" title="Usługi RRB">
+                    <span>💼</span> Usługi nakładcze (DP90)
+                </button>
+                <button type="button" onclick="sendQuickQuery('Błąd VF067: Konto przychodów nie zostało ustalone dla konta KOFI')" class="chat-quick-pill" title="Diagnozuj VF067">
+                    <span>🚨</span> Błąd VKOA (VF067)
+                </button>
+                <button type="button" onclick="sendQuickQuery('Błąd V1382: Wycena obowiązkowa PR00 nie została znaleziona')" class="chat-quick-pill" title="Diagnozuj V1382">
+                    <span>💰</span> Brak wyceny PR00 (V1382)
+                </button>
+                <button type="button" onclick="sendQuickQuery('Błąd VL150: Skład lub partia nie zostały określone w dostawie')" class="chat-quick-pill" title="Diagnozuj VL150">
+                    <span>🚚</span> Brak składu w dostawie (VL150)
+                </button>
+            </div>
+
+            <div class="chat-input-area">
+                <form onsubmit="handleFormSubmit(event)" class="ios-input-capsule">
+                    <input type="text" id="user-input" placeholder="Wpisz kod błędu (np. VF067, V1382, VL150) lub zadaj pytanie..." class="capsule-input">
+                    <button type="submit" class="ios-send-circle" title="Wyślij zapytanie">
+                        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 10l7-7m0 0l7 7m-7-7v18"></path>
+                        </svg>
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- ZAKŁADKA 2: 🩺 VKOA TROUBLESHOOTER & 💰 SYMULATOR PROCEDURY WYCENY V/08 -->
+        <div id="view-vkoa" class="ios-card view-container hidden">
+            
+            <!-- Przełącznik pod-modułów: VKOA Troubleshooter vs Symulator Wyceny V/08 -->
+            <div class="vkoa-mode-switcher-bar">
+                <div class="ios-segmented-control">
+                    <button type="button" id="btn-vkoa-sub-analyzer" onclick="switchVkoaSubview('analyzer')" class="ios-segment-btn active">
+                        <span>🩺</span> Diagnostyka VKOA (Sekwencja KOFI00 / VF067)
+                    </button>
+                    <button type="button" id="btn-vkoa-sub-pricing" onclick="switchVkoaSubview('pricing')" class="ios-segment-btn">
+                        <span>💰</span> Symulator Procedury Wyceny V/08 ➔ VKOA (PRCD_ELEMENTS)
+                    </button>
+                </div>
+                <span class="vkoa-mode-hint">Zintegrowany most SD ➔ FI: od rekordu warunkowego <code>PR00/K007/KF00/MWST</code> do konta G/L <code>SAKNR</code></span>
+            </div>
+
+            <!-- POD-WIDOK A: DIAGNOSTYKA VKOA (KOFI00) -->
+            <div id="vkoa-subview-analyzer" class="vkoa-subview-box">
+                <div class="vkoa-banner">
+                    <div>
+                        <h2 class="vkoa-title">
+                            <span>🩺</span> VKOA Account Determination Troubleshooter (VF01 / VF02 / VFX3)
+                        </h2>
+                        <p class="vkoa-subtitle">
+                            Symulator sekwencji dostępu <code>KOFI00</code> tabel 001–005. Diagnozuje błąd <strong>VF067</strong> i generuje 1-klikowy Quick-Fix.
+                        </p>
+                    </div>
+                    <div class="vkoa-quick-samples">
+                        <button onclick="fillVkoaSample('existing')" class="ios-chip bg-chip-green">
+                            ✅ Kraj (01/02) -> Sukces
+                        </button>
+                        <button onclick="fillVkoaSample('missing')" class="ios-chip bg-chip-red">
+                            ⛔ Błąd VF067 (Brak reguły)
+                        </button>
+                    </div>
+                </div>
+
+                <div class="vkoa-grid">
+                    <div class="vkoa-card">
+                        <div class="vkoa-card-title">
+                            <span>📋</span> Tryb 1: Wklej treść błędu z SAP (VF01/VF02)
+                        </div>
+                        <textarea id="vkoa-raw-error" rows="3" placeholder="np. VF067: Account determination for entry INT 1000 01 02 ERL not possible" class="vkoa-textarea"></textarea>
+                        <div class="vkoa-btn-row">
+                            <button onclick="runVkoaTroubleshoot(true)" class="ios-btn-primary">
+                                <span>🔍</span> Diagnozuj z logu
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="vkoa-card">
+                        <div class="vkoa-card-title">
+                            <span>⚙️</span> Tryb 2: Parametry ustalania kont (VKOA)
+                        </div>
+                        <div class="vkoa-inputs-row">
+                            <input type="text" id="vkoa-ktopl" value="INT" placeholder="KTOPL" class="ios-input-small">
+                            <input type="text" id="vkoa-vkorg" value="1000" placeholder="VKORG" class="ios-input-small">
+                            <select id="vkoa-ktgrd" class="ios-input-small">
+                                <option value="01">01 Kraj</option>
+                                <option value="02">02 Eksport</option>
+                            </select>
+                            <select id="vkoa-ktgrm" class="ios-input-small">
+                                <option value="01">01 Towar</option>
+                                <option value="02" selected>02 Wyrób</option>
+                                <option value="03">03 Usługi</option>
+                            </select>
+                            <select id="vkoa-kvsl" class="ios-input-small">
+                                <option value="ERL" selected>ERL Przychód</option>
+                                <option value="ERS">ERS Rabaty</option>
+                                <option value="ERF">ERF Fracht</option>
+                                <option value="MWS">MWS Podatek</option>
+                            </select>
+                        </div>
+                        <div class="vkoa-btn-row">
+                            <button onclick="runVkoaTroubleshoot(false)" class="ios-btn-primary">
+                                <span>⚡</span> Symuluj KOFI00
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="vkoa-results-container" class="vkoa-results-box">
+                    <div class="vkoa-placeholder">
+                        <span>🩺</span>
+                        <p>Wklej treść błędu lub kliknij "Szybkie scenariusze".</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- POD-WIDOK B: SYMULATOR PROCEDURY WYCENY V/08 -> PRCD_ELEMENTS -> VKOA -->
+            <div id="vkoa-subview-pricing" class="vkoa-subview-box hidden">
+                <div class="vkoa-banner pricing-banner">
+                    <div>
+                        <h2 class="vkoa-title">
+                            <span>💰</span> Symulator Procedury Wyceny SAP SD (<code>V/08</code> / <code>PRCD_ELEMENTS</code>) ➔ <code>VKOA</code>
+                        </h2>
+                        <p class="vkoa-subtitle">
+                            Symuluje kalkulację pozycji zlecenia/faktury krok po kroku i sprawdza, czy każdy klucz konta (<code>ERL</code>, <code>ERS</code>, <code>ERF</code>, <code>MWS</code>) ma przypisane konto księgi głównej FI.
+                        </p>
+                    </div>
+                    <div class="vkoa-quick-samples">
+                        <button type="button" onclick="runPricingSimulation()" class="ios-btn-primary">
+                            <span>⚡</span> Przelicz Wycenę V/08 + VKOA
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Parametry wejściowe symulacji V/08 -->
+                <div class="pricing-controls-grid">
+                    <div class="pricing-field">
+                        <label class="form-label">👥 Odbiorca (KUNNR / KTGRD / TAXKD)</label>
+                        <select id="pricing-kunnr" onchange="runPricingSimulation()" class="form-input"></select>
+                    </div>
+                    <div class="pricing-field">
+                        <label class="form-label">📦 Materiał (MATNR / KTGRM / STPRS)</label>
+                        <select id="pricing-matnr" onchange="handlePricingMaterialChange()" class="form-input"></select>
+                    </div>
+                    <div class="pricing-field">
+                        <label class="form-label">🔢 Ilość (KWMENG)</label>
+                        <input type="number" id="pricing-qty" value="10" min="1" step="1" onchange="runPricingSimulation()" class="form-input">
+                    </div>
+                    <div class="pricing-field">
+                        <label class="form-label">🏷️ Rabat % (K007 / ZREB -> ERS)</label>
+                        <input type="number" id="pricing-disc" value="5" min="0" max="90" step="0.5" onchange="runPricingSimulation()" class="form-input">
+                    </div>
+                    <div class="pricing-field">
+                        <label class="form-label">🚚 Fracht (KF00 / ZFRE -> ERF)</label>
+                        <input type="number" id="pricing-freight" value="150" min="0" step="10" onchange="runPricingSimulation()" class="form-input">
+                    </div>
+                    <div class="pricing-field">
+                        <label class="form-label">💵 Cena jedn. PR00/ZPR1 (opcjonalnie)</label>
+                        <input type="number" id="pricing-override-price" placeholder="Auto (STPRS x 1.35)" min="0" step="10" onchange="runPricingSimulation()" class="form-input">
+                    </div>
+                </div>
+
+                <!-- Wynik kaskady V/08 + VKOA -->
+                <div id="pricing-results-container" class="vkoa-results-box">
+                    <div class="vkoa-placeholder">
+                        <span>💰</span>
+                        <p>Wybierz odbiorcę i materiał, aby przeprowadzić symulację procedury wyceny V/08 i determinacji kont VKOA.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ZAKŁADKA 3: 🔄 PROCESY PRZEDSIĘBIORSTWA & DOCUMENT FLOW -->
+        <div id="view-process" class="ios-card view-container hidden">
+            
+            <!-- Pasek Narzędziowy & Wybór Branży -->
+            <div class="process-toolbar">
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                        <h2 class="flow-title flex items-center gap-2">
+                            <span>🔄</span> Procesy Biznesowe Przedsiębiorstwa & Document Flow
+                        </h2>
+                        <p class="flow-subtitle">
+                            Kompleksowe łańcuchy procesowe dla firm produkcyjnych, handlowo-dystrybucyjnych i usługowych.
+                        </p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span id="process-active-company-tag" class="ios-badge ios-badge-blue text-[11px] font-mono">Profil aktywny</span>
+                    </div>
+                </div>
+
+                <!-- Sekcja Autodetekcji Procesów (Auto-Discovery Engine) -->
+                <div class="inferred-processes-box" id="process-inferred-banner">
+                    <div class="inferred-header">
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <span class="inferred-sparkle">⚡</span>
+                            <span class="inferred-title">Wykryte procesy firmy (Auto-Discovery z kartotek SAP)</span>
+                            <span id="inferred-count-badge" class="inferred-count-badge">Analiza...</span>
+                        </div>
+                        <button type="button" onclick="refreshProcessInference()" class="btn-refresh-inferred" title="Przeanalizuj kartoteki i wykryj procesy">
+                            <span>🔍</span> Przeanalizuj kartoteki
+                        </button>
+                    </div>
+                    <div id="inferred-summary-text" class="inferred-summary-text">
+                        Analizowanie profilu firmy, indeksów materiałowych (MVKE-MTPOS), kartotek odbiorców (KNVV-KTGRD) i dostawców...
+                    </div>
+                    <div id="inferred-tags-container" class="inferred-tags-list">
+                        <!-- Dynamicznie renderowane tagi wykrytych procesów -->
+                    </div>
+                    <div id="inferred-evidence-drawer" class="inferred-evidence-drawer hidden"></div>
+                </div>
+
+                <!-- Filtry Dziedzin Biznesowych (Pills) -->
+                <div class="domain-filters-row">
+                    <button type="button" onclick="filterProcessesByDomain('ALL')" id="filter-domain-all" class="domain-filter-btn active">
+                        <span>🌐</span> Wszystkie procesy (10)
+                    </button>
+                    <button type="button" onclick="filterProcessesByDomain('MANUFACTURING')" id="filter-domain-mfg" class="domain-filter-btn">
+                        <span>🏭</span> Produkcja (MTS / MTO / Kooperacja)
+                    </button>
+                    <button type="button" onclick="filterProcessesByDomain('TRADING')" id="filter-domain-trad" class="domain-filter-btn">
+                        <span>🛒</span> Handel & Dystrybucja (TAS / Konsygnacja / Intercompany)
+                    </button>
+                    <button type="button" onclick="filterProcessesByDomain('SERVICES')" id="filter-domain-serv" class="domain-filter-btn">
+                        <span>💼</span> Usługi & Projekty (RRB DP90 / Kamienie Milowe)
+                    </button>
+                    <button type="button" onclick="filterProcessesByDomain('COMPLAINTS')" id="filter-domain-comp" class="domain-filter-btn">
+                        <span>🔄</span> Reklamacje & Zwroty (RE / LR / G2)
+                    </button>
+                </div>
+
+                <!-- Karuzela / Pasek Kafelków Scenariuszy Procesowych -->
+                <div id="process-scenarios-strip" class="scenarios-carousel">
+                    <!-- Dynamicznie renderowane kafelki procesów -->
+                </div>
+            </div>
+
+            <!-- Główna Oś Czasu Przepływu Dokumentów (Document Flow Timeline) -->
+            <div id="docflow-timeline" class="docflow-timeline-box">
+                <div class="docflow-loading">Ładowanie łańcucha dokumentów...</div>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- Pływające powiadomienie iOS Toast -->
+    <div id="ios-toast" class="ios-toast"></div>
+
+    <!-- Zmodularyzowane skrypty frontendowe SAP SD Copilot -->
+    <script src="{{ url_for('static', filename='js/auth.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/company_mdg.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/vkoa_pricing.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/processes.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/tcodes.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>

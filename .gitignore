@@ -1,0 +1,22 @@
+# Python & Virtual Environments
+.venv/
+venv/
+env/
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Local DuckDB database files (auto-seeded on startup)
+data/*.duckdb
+data/*.duckdb.wal
+
+# macOS & IDE
+.DS_Store
+.AppleDouble
+.LSOverride
+.vscode/
+.idea/
+
+# Logs & temporary files
+*.log
